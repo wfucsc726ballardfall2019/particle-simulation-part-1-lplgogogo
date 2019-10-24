@@ -3,6 +3,15 @@
 #include <assert.h>
 #include <math.h>
 #include "common.h"
+#include <vector>
+using namespace std;
+
+// constant copied from common.cpp for use
+#define density 0.0005
+#define mass    0.01
+#define cutoff  0.01
+#define min_r   (cutoff/100)
+#define dt      0.0005
 
 //
 //  benchmarking program
@@ -35,6 +44,13 @@ int main( int argc, char **argv )
     set_size( n );
     init_particles( n, particles );
     
+    //calculate the gridSize, binSize, and then number of bin on one side;
+    double gridSize = sqrt(n * density);
+    double binSize = cutoff * 2;     // equals to the diameter of the circle
+    int binNum = int(gridSize / binSize) + 1;     //ceil the value by +1
+
+    vector<vector<int> >bin(binNum * binNum, vector<int> (0));
+
     //
     //  simulate a number of time steps
     //
@@ -42,18 +58,108 @@ int main( int argc, char **argv )
 	
     for( int step = 0; step < NSTEPS; step++ )
     {
-	navg = 0;
+	    navg = 0;
         davg = 0.0;
-	dmin = 1.0;
-        //
-        //  compute forces
-        //
-        for( int i = 0; i < n; i++ )
-        {
-            particles[i].ax = particles[i].ay = 0;
-            for (int j = 0; j < n; j++ )
-				apply_force( particles[i], particles[j],&dmin,&davg,&navg);
+	    dmin = 1.0;
+
+        //put all the particles into corresponding bins
+        for (int i = 1; i < n; i++){
+            int x = floor(particles[i].x / cutoff);     //calculate the x index of the bin
+            int y = floor(particles[i].y / cutoff);     //calculate the y index of the bin
+            bin[x * binNum + y].push_back(i);      //put the particle in to the bin
         }
+
+        for (int i = 0; i < n; i++){
+            particles[i].ax = particles[i].ay = 0;      // initialize acceleration
+            int x = floor(particles[i].x / cutoff);     //calculate the x index of the bin
+            int y = floor(particles[i].y / cutoff);     //calculate the y index of the bin
+
+            //situation that the particle is not in the first or the last row of the grid
+            if ((x != 0) && (x!= binNum)){
+                for (int j = x-1; j <= x+1; j++){
+                    //situation that the particle is not in the first or the last column of the grid
+                    if ((y != 0 && y != binNum)){
+                        for (int k = y-1; k <= y+1; k++){
+                            // for (int l = 0; l <= bin[j].at[k].size(); l++)
+                            for (int j1 = x-1; j1 <= x+1; j1++){
+                                for (int k1 = y-1; k1 <= y+1; k1++){
+                                    apply_force(particles[k], particles[k1], &dmin, &davg, &navg);
+                                }
+                            }
+                        }
+                    }
+                    //situation that the particle is in the first column of the grid
+                    else if (y == 0){
+                        for (int k = y; k <= y+1; k++){
+                            apply_force(particles[j], particles[k], &dmin, &davg, &navg);
+                        }
+                    }
+                    //situation that the particle is in the last column of the grid
+                    else{
+                        for (int k = y-1; k <= y; k++){
+                            apply_force(particles[j], particles[k], &dmin, &davg, &navg);
+                        }
+                    }
+                }
+            }
+
+            //situation that the particle is in the first row of the grid
+            else if (x == 0){
+                for (int j = x; j <= x+1; j++){
+                    //situation that the particle is not in the first or the last column of the grid
+                    if ((y != 0 && y != binNum)){
+                        for (int k = y-1; k <= y+1; k++){
+                            apply_force(particles[j], particles[k], &dmin, &davg, &navg);
+                        }
+                    }
+                    //situation that the particle is in the first column of the grid
+                    else if (y == 0){
+                        for (int k = y; k <= y+1; k++){
+                            apply_force(particles[j], particles[k], &dmin, &davg, &navg);
+                        }
+                    }
+                    //situation that the particle is in the last column of the grid
+                    else{
+                        for (int k = y-1; k <= y; k++){
+                            apply_force(particles[j], particles[k], &dmin, &davg, &navg);
+                        }
+                    }
+                }
+            }
+
+            //situation that the particle is in the last row of the grid
+            if (x == binNum){
+                for (int j = x-1; j <= x; j++){
+                    //situation that the particle is not in the first or the last column of the grid
+                    if ((y != 0 && y != binNum)){
+                        for (int k = y-1; k <= y+1; k++){
+                            apply_force(particles[j], particles[k], &dmin, &davg, &navg);
+                        }
+                    }
+                    //situation that the particle is in the first column of the grid
+                    else if (y == 0){
+                        for (int k = y; k <= y+1; k++){
+                            apply_force(particles[j], particles[k], &dmin, &davg, &navg);
+                        }
+                    }
+                    //situation that the particle is in the last column of the grid
+                    else{
+                        for (int k = y-1; k <= y; k++){
+                            apply_force(particles[j], particles[k], &dmin, &davg, &navg);
+                        }
+                    }
+                }
+            }
+        }
+        // //  original algorithm
+        // //  compute forces
+        // //
+        // for( int i = 0; i < n; i++ )
+        // {
+        //     particles[i].ax = particles[i].ay = 0;
+        //     for (int j = 0; j < n; j++ )
+		// 		apply_force( particles[i], particles[j],&dmin,&davg,&navg);
+        // }
  
         //
         //  move particles
