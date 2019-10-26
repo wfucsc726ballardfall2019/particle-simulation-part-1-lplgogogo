@@ -22,16 +22,16 @@ int main( int argc, char **argv )
     int navg,nabsavg=0;
     double davg,dmin, absmin=1.0, absavg=0.0;
 
-    if( find_option( argc, argv, "-h" ) >= 0 )
-    {
-        printf( "Options:\n" );
-        printf( "-h to see this help\n" );
-        printf( "-n <int> to set the number of particles\n" );
-        printf( "-o <filename> to specify the output file name\n" );
-        printf( "-s <filename> to specify a summary file name\n" );
-        printf( "-no turns off all correctness checks and particle output\n");
-        return 0;
-    }
+        if( find_option( argc, argv, "-h" ) >= 0 )
+        {
+            printf( "Options:\n" );
+            printf( "-h to see this help\n" );
+            printf( "-n <int> to set the number of particles\n" );
+            printf( "-o <filename> to specify the output file name\n" );
+            printf( "-s <filename> to specify a summary file name\n" );
+            printf( "-no turns off all correctness checks and particle output\n");
+            return 0;
+        }
     
     int n = read_int( argc, argv, "-n", 1000 );
 
@@ -64,152 +64,53 @@ int main( int argc, char **argv )
         davg = 0.0;
 	    dmin = 1.0;
 
-        //put all the particles into corresponding bins
-        for (int i = 0; i < n; i++){
-            int row = floor(particles[i].x / binSize);     //calculate the row index of the bin
-            int col = floor(particles[i].y / binSize);     //calculate the column index of the bin
-            bin[row * binNum + col].push_back(i);      //put the particle in to the bin in row major
-        }
+            //put all the particles into corresponding bins
+            for (int i = 0; i < n; i++){
+                int row = floor(particles[i].x / binSize);     //calculate the row index of the bin
+                int col = floor(particles[i].y / binSize);     //calculate the column index of the bin
+                bin[row * binNum + col].push_back(i);      //put the particle in to the bin in row major
+            }
 
         for (int i = 0; i < n; i++){
             particles[i].ax = particles[i].ay = 0;      // initialize acceleration
             int row = floor(particles[i].x / binSize);     //calculate the row index of the bin
             int col = floor(particles[i].y / binSize);     //calculate the column index of the bin
 
-            //
-            //different cases to deal with
-            //
-            //situation that the particle is not in the first or the last column of the grid
-            if ((row > 0) && (row< binNum-1)){
-                for (int j = row-1; j <= row+1; j++){
-                    //situation that the particle is not in the first or the last row of the grid
-                    if ((col > 0 )&&(col < binNum-1)){
-                        for (int k = col-1; k <= col+1; k++){
-                             for (int l = 0; l < bin[j*binNum + k].size(); l++){
-                                 int fa = bin[j*binNum + k].at(l);
+            for(int r = max(0,row -1); r<= min(row+1,binNum-1); r++){
+                for(int c = max(0,col -1); c<= min(col+1,binNum-1); c++ ){
+                     for (int l = 0; l < bin[r*binNum + c].size(); l++){
+                                 int fa = bin[r*binNum + c].at(l);
                                  apply_force(particles[i], particles[fa], &dmin, &davg, &navg);
-                            }
                         }
-                    }
-
-                    //situation that the particle is in the first column of the grid
-                    else if (col == 0){
-                        for (int k = col; k <= col+1; k++){
-                            for (int l = 0; l < bin[j*binNum + k].size(); l++){
-                                 int fa = bin[j*binNum + k].at(l);
-                                 apply_force(particles[i], particles[fa], &dmin, &davg, &navg);
-                            }       
-                        }
-                    }
-                    //situation that the particle is in the last column of the grid
-                    else{
-                        for (int k = col-1; k <= col; k++){
-                            for (int l = 0; l < bin[j*binNum + k].size(); l++){
-                                 int fa = bin[j*binNum + k].at(l);
-                                 apply_force(particles[i], particles[fa], &dmin, &davg, &navg);                                 
-                            }
-                        }
-                    }
-                }
-            }
-
-            //situation that the particle is in the first row of the grid
-            else if (row == 0){
-                for (int j = row; j <= row+1; j++){
-                    //situation that the particle is not in the first or the last column of the grid
-                    if ((col > 0 )&& (col < binNum-1)){
-                        for (int k = col-1; k <= col+1; k++){
-                            for (int l = 0; l < bin[j*binNum + k].size(); l++){
-                                 int fa = bin[j*binNum + k].at(l);
-                                 apply_force(particles[i], particles[fa], &dmin, &davg, &navg);                                  
-                            }
-                        }
-                    }
-                    //situation that the particle is in the first column of the grid
-                    else if (col == 0){
-                        for (int k = col; k <= col+1; k++){
-                            for (int l = 0; l < bin[j*binNum + k].size(); l++){
-                                 int fa = bin[j*binNum + k].at(l);
-                                 apply_force(particles[i], particles[fa], &dmin, &davg, &navg);                                 
-                            }
-                        }
-                    }
-                    //situation that the particle is in the last column of the grid
-                    else if (col == binNum-1){
-                        for (int k = col-1; k <= col; k++){
-                            for (int l = 0; l <bin[j*binNum + k].size(); l++){
-                                 int fa = bin[j*binNum + k].at(l);
-                                 apply_force(particles[i], particles[fa], &dmin, &davg, &navg);                                 
-                            }
-                        }
-                    }
-                }
-            }
-
-            //situation that the particle is in the last row of the grid
-            if (row == binNum-1){
-                for (int j = row-1; j <= row; j++){
-                    //situation that the particle is not in the first or the last column of the grid
-                    if ((col > 0) &&( col < binNum-1)){
-                        for (int k = col-1; k <= col+1; k++){
-                            for (int l = 0; l < bin[j*binNum + k].size(); l++){
-                                 int fa = bin[j*binNum + k].at(l);
-                                 apply_force(particles[i], particles[fa], &dmin, &davg, &navg);                                  
-                            }
-                        }
-                    }
-                    //situation that the particle is in the first column of the grid
-                    else if (col == 0){
-                        for (int k = col; k <= col+1; k++){
-                            for (int l = 0; l < bin[j*binNum + k].size(); l++){
-                                 int fa = bin[j*binNum + k].at(l);
-                                 apply_force(particles[i], particles[fa], &dmin, &davg, &navg);                                 
-                            }
-                        }
-                    }
-                    //situation that the particle is in the last column of the grid
-                    else{
-                        for (int k = col-1; k <= col; k++){
-                            for (int l = 0; l < bin[j*binNum + k].size(); l++){
-                                 int fa = bin[j*binNum + k].at(l);
-                                 apply_force(particles[i], particles[fa], &dmin, &davg, &navg);                                  
-                            }
-                        }
-                    }
                 }
             }
         }
-        //
-        //before moving the particles we need to release the inside vectors
-        //
-        for (int i = 0; i < binNum*binNum; i++)
-            bin[i].resize(0);
 
-        //
-        //  move particles
-        //
+            for( int i = 0; i < n; i++ ) 
+                move( particles[i] );	
 
-        for( int i = 0; i < n; i++ ) 
-            move( particles[i] );		
+            for (int i = 0; i < binNum*binNum; i++)
+                bin[i].resize(0);	
 
-        if( find_option( argc, argv, "-no" ) == -1 )
-        {
-          //
-          // Computing statistical data
-          //
-          if (navg) {
-            absavg +=  davg/navg;
-            nabsavg++;
-          }
-          if (dmin < absmin) absmin = dmin;
-		
-          //
-          //  save if necessary
-          //
-          if( fsave && (step%SAVEFREQ) == 0 )
-              save( fsave, n, particles );
+            if( find_option( argc, argv, "-no" ) == -1 )
+            {
+            //
+            // Computing statistical data
+            //
+            if (navg) {
+                absavg +=  davg/navg;
+                nabsavg++;
+            }
+            if (dmin < absmin) absmin = dmin;
+            
+            //
+            //  save if necessary
+            //
+            if( fsave && (step%SAVEFREQ) == 0 )
+                save( fsave, n, particles );
+            }
         }
-    }
+    
     simulation_time = read_timer( ) - simulation_time;
     
     printf( "n = %d, simulation time = %g seconds", n, simulation_time);
