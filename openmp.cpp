@@ -76,6 +76,9 @@ int main( int argc, char **argv )
             }
         #pragma omp parallel for private (dmin)
         for (int i = 0; i < n; i++){
+
+            numthreads = omp_get_num_threads();
+
             particles[i].ax = particles[i].ay = 0;      // initialize acceleration
             int row = floor(particles[i].x / binSize);     //calculate the row index of the bin
             int col = floor(particles[i].y / binSize);     //calculate the column index of the bin
@@ -121,7 +124,8 @@ int main( int argc, char **argv )
     
     simulation_time = read_timer( ) - simulation_time;
     
-    printf( "n = %d, simulation time = %g seconds", n, simulation_time);
+    //printf( "n = %d, simulation time = %g seconds", n, simulation_time);
+    printf( "n = %d,threads = %d, simulation time = %g seconds", n,numthreads, simulation_time);
 
     if( find_option( argc, argv, "-no" ) == -1 )
     {
