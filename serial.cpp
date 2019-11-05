@@ -51,7 +51,9 @@ int main( int argc, char **argv )
     int binNum = int(gridSize / binSize) + 1; // the binNum should be +1
     cout << binNum <<endl;
 
-    vector<vector<int> >bin(binNum * binNum, vector<int> (0));
+    int NumberOfBins = binNum * binNum;
+
+    vector<vector<int> >bin(NumberOfBins);
 
     //
     //  simulate a number of time steps
